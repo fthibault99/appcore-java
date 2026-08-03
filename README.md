@@ -6,6 +6,7 @@ The package currently supports:
 
 - barcode product lookup and translation;
 - short LEGO set description generation;
+- plain-text translation;
 - recipe extraction and translation;
 - recipe product extraction;
 - analytics event collection;
@@ -115,6 +116,25 @@ let description = try await client.describeBrickSet(
 ```
 
 AppCore owns the OpenAI prompt, model, output limits, and API key. The Swift client sends only the set code, set name, requested language, and its AppCore API key.
+
+## Text translation
+
+Translate plain text into a target language:
+
+```swift
+guard let english = LanguageCode("en") else {
+    fatalError("Invalid language code")
+}
+
+let translatedText = try await client.translate(
+    "Bonjour le monde !",
+    to: english
+)
+
+print(translatedText)
+```
+
+The request is sent to `POST /api/ai/texts/translate`. Text is limited to 20,000 characters by the AppCore server.
 
 ## Recipes
 

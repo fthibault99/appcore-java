@@ -85,6 +85,21 @@ public final class AppCoreClient: Sendable {
         return response.description
     }
 
+    /// Calls `POST /api/ai/texts/translate`.
+    public func translate(
+        _ text: String,
+        to targetLanguage: LanguageCode
+    ) async throws -> String {
+        let response: TranslateTextResponse = try await postJSON(
+            path: ["api", "ai", "texts", "translate"],
+            body: TranslateTextRequest(
+                text: text,
+                targetLanguage: targetLanguage
+            )
+        )
+        return response.text
+    }
+
     /// Calls `POST /api/ai/recipes/translate`.
     public func translate(
         _ recipe: Recipe,

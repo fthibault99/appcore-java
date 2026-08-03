@@ -90,6 +90,36 @@ final class AppCoreClientTests: XCTestCase {
         )
     }
 
+    func testTranslateTextUsesExpectedBodyAndReturnsText() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://appcore.example/api/ai/texts/translate")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [String: Any]
+            )
+            XCTAssertEqual(object["text"] as? String, "Bonjour le monde !")
+            XCTAssertEqual(object["targetLanguage"] as? String, "en")
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"text":"Hello, world!"}"#
+            )
+        }
+
+        let translatedText = try await makeClient().translate(
+            "Bonjour le monde !",
+            to: LanguageCode("EN")!
+        )
+
+        XCTAssertEqual(translatedText, "Hello, world!")
+    }
+
     func testDecodesAppCoreErrorResponse() async throws {
         URLProtocolStub.requestHandler = { request in
             Self.response(
