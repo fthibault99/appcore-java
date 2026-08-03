@@ -44,7 +44,7 @@ Then add the product to the appropriate target:
 Import the generated Swift module with:
 
 ```swift
-import appcore_swift
+import AppCoreSwift
 ```
 
 ## Client configuration
@@ -53,7 +53,7 @@ Create one client and reuse it throughout the application:
 
 ```swift
 import Foundation
-import appcore_swift
+import AppCoreSwift
 
 let client = AppCoreClient(
     baseURL: URL(string: "https://api.example.com")!,

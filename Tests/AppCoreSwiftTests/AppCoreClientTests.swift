@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import appcore_swift
+@testable import AppCoreSwift
 
 final class AppCoreClientTests: XCTestCase {
     override func tearDown() {
