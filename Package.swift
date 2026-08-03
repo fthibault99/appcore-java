@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "appcore-swift",
+    name: "AppCoreSwift",
     platforms: [
         .iOS(.v15),
         .macOS(.v12)
@@ -12,7 +12,7 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "appcore-swift",
+            name: "AppCoreSwift",
             targets: ["appcore-swift"]
         ),
     ],

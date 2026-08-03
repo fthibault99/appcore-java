@@ -20,7 +20,7 @@ The package currently supports:
 
 ## Installation
 
-In Xcode, select **File > Add Package Dependencies > Add Local**, then select the `appcore-swift` directory. Add the `appcore-swift` library product to your application target.
+In Xcode, select **File > Add Package Dependencies > Add Local**, then select the `appcore-swift` directory. Add the `AppCoreSwift` library product to your application target.
 
 For another local Swift package, add this dependency to `Package.swift`:
 
@@ -36,7 +36,7 @@ Then add the product to the appropriate target:
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "appcore-swift", package: "appcore-swift")
+        .product(name: "AppCoreSwift", package: "appcore-swift")
     ]
 )
 ```
