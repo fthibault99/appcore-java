@@ -1,4 +1,4 @@
-# AppCore Java Swift Client
+# AppCore Swift Client
 
 A Swift 6 client package for the authenticated AppCore Spring Boot API.
 
@@ -20,13 +20,13 @@ The package currently supports:
 
 ## Installation
 
-In Xcode, select **File > Add Package Dependencies > Add Local**, then select the `appcore-java` directory. Add the `appcore-java` library product to your application target.
+In Xcode, select **File > Add Package Dependencies > Add Local**, then select the `appcore-swift` directory. Add the `appcore-swift` library product to your application target.
 
 For another local Swift package, add this dependency to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(path: "../appcore-java")
+    .package(path: "../appcore-swift")
 ]
 ```
 
@@ -36,7 +36,7 @@ Then add the product to the appropriate target:
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "appcore-java", package: "appcore-java")
+        .product(name: "appcore-swift", package: "appcore-swift")
     ]
 )
 ```
@@ -44,7 +44,7 @@ Then add the product to the appropriate target:
 Import the generated Swift module with:
 
 ```swift
-import appcore_java
+import appcore_swift
 ```
 
 ## Client configuration
@@ -53,7 +53,7 @@ Create one client and reuse it throughout the application:
 
 ```swift
 import Foundation
-import appcore_java
+import appcore_swift
 
 let client = AppCoreClient(
     baseURL: URL(string: "https://api.example.com")!,

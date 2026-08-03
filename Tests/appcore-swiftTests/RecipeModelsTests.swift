@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import appcore_java
+@testable import appcore_swift
 
 final class RecipeModelsTests: XCTestCase {
     func testDecodesRecipeUsingAppCoreFieldNames() throws {

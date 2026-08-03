@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "appcore-java",
+    name: "appcore-swift",
     platforms: [
         .iOS(.v15),
         .macOS(.v12)
@@ -12,19 +12,19 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "appcore-java",
-            targets: ["appcore-java"]
+            name: "appcore-swift",
+            targets: ["appcore-swift"]
         ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "appcore-java"
+            name: "appcore-swift"
         ),
         .testTarget(
-            name: "appcore-javaTests",
-            dependencies: ["appcore-java"]
+            name: "appcore-swiftTests",
+            dependencies: ["appcore-swift"]
         ),
     ],
     swiftLanguageModes: [.v6]
