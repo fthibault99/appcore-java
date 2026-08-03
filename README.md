@@ -127,14 +127,15 @@ guard let english = LanguageCode("en") else {
 }
 
 let translatedText = try await client.translate(
-    "Bonjour le monde !",
-    to: english
+    "Rare Sets",
+    to: english,
+    context: "Title of a collection of rare LEGO sets."
 )
 
 print(translatedText)
 ```
 
-The request is sent to `POST /api/ai/texts/translate`. Text is limited to 20,000 characters by the AppCore server.
+The request is sent to `POST /api/ai/texts/translate`. Text is limited to 20,000 characters by the AppCore server. The optional context is limited to 500 characters and helps resolve terminology, tone, or intended use. It is not translated or returned. Calls that do not need context can omit the argument.
 
 ## Recipes
 

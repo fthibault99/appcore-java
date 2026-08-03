@@ -2,10 +2,16 @@
 public struct TranslateTextRequest: Codable, Equatable, Sendable {
     public let text: String
     public let targetLanguage: LanguageCode
+    public let context: String?
 
-    public init(text: String, targetLanguage: LanguageCode) {
+    public init(
+        text: String,
+        targetLanguage: LanguageCode,
+        context: String? = nil
+    ) {
         self.text = text
         self.targetLanguage = targetLanguage
+        self.context = context
     }
 }
 

@@ -104,6 +104,10 @@ final class AppCoreClientTests: XCTestCase {
             )
             XCTAssertEqual(object["text"] as? String, "Bonjour le monde !")
             XCTAssertEqual(object["targetLanguage"] as? String, "en")
+            XCTAssertEqual(
+                object["context"] as? String,
+                "Title of a collection of rare LEGO sets."
+            )
 
             return Self.response(
                 for: request,
@@ -114,10 +118,34 @@ final class AppCoreClientTests: XCTestCase {
 
         let translatedText = try await makeClient().translate(
             "Bonjour le monde !",
-            to: LanguageCode("EN")!
+            to: LanguageCode("EN")!,
+            context: "Title of a collection of rare LEGO sets."
         )
 
         XCTAssertEqual(translatedText, "Hello, world!")
+    }
+
+    func testTranslateTextOmitsContextWhenAbsent() async throws {
+        URLProtocolStub.requestHandler = { request in
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [String: Any]
+            )
+            XCTAssertNil(object["context"])
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"text":"Hello!"}"#
+            )
+        }
+
+        let translatedText = try await makeClient().translate(
+            "Bonjour !",
+            to: LanguageCode("en")!
+        )
+
+        XCTAssertEqual(translatedText, "Hello!")
     }
 
     func testDecodesAppCoreErrorResponse() async throws {
