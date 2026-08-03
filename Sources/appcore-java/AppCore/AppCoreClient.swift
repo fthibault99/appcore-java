@@ -68,6 +68,23 @@ public final class AppCoreClient: Sendable {
         return response.product
     }
 
+    /// Calls `POST /api/ai/brick-sets/describe`.
+    public func describeBrickSet(
+        code: String,
+        name: String,
+        in language: LanguageCode
+    ) async throws -> String {
+        let response: DescribeBrickSetResponse = try await postJSON(
+            path: ["api", "ai", "brick-sets", "describe"],
+            body: DescribeBrickSetRequest(
+                setCode: code,
+                setName: name,
+                language: language
+            )
+        )
+        return response.description
+    }
+
     /// Calls `POST /api/ai/recipes/translate`.
     public func translate(
         _ recipe: Recipe,

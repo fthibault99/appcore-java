@@ -5,6 +5,7 @@ A Swift 6 client package for the authenticated AppCore Spring Boot API.
 The package currently supports:
 
 - barcode product lookup and translation;
+- short LEGO set description generation;
 - recipe extraction and translation;
 - recipe product extraction;
 - analytics event collection;
@@ -96,6 +97,24 @@ let translatedProduct = try await client.translate(
     to: french
 )
 ```
+
+## LEGO set descriptions
+
+Generate a short description from a set code and name in the requested language:
+
+```swift
+guard let french = LanguageCode("fr") else {
+    fatalError("Invalid language code")
+}
+
+let description = try await client.describeBrickSet(
+    code: "10307",
+    name: "Eiffel Tower",
+    in: french
+)
+```
+
+AppCore owns the OpenAI prompt, model, output limits, and API key. The Swift client sends only the set code, set name, requested language, and its AppCore API key.
 
 ## Recipes
 

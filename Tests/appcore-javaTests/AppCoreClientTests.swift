@@ -56,6 +56,40 @@ final class AppCoreClientTests: XCTestCase {
         XCTAssertEqual(translated.productName, "Briques classiques")
     }
 
+    func testDescribeBrickSetUsesExpectedBodyAndReturnsDescription() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://appcore.example/api/ai/brick-sets/describe")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [String: Any]
+            )
+            XCTAssertEqual(object["setCode"] as? String, "10307")
+            XCTAssertEqual(object["setName"] as? String, "Eiffel Tower")
+            XCTAssertEqual(object["language"] as? String, "fr")
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"description":"Une imposante interprétation en briques de la tour Eiffel.","language":"fr"}"#
+            )
+        }
+
+        let description = try await makeClient().describeBrickSet(
+            code: "10307",
+            name: "Eiffel Tower",
+            in: LanguageCode("fr")!
+        )
+
+        XCTAssertEqual(
+            description,
+            "Une imposante interprétation en briques de la tour Eiffel."
+        )
+    }
+
     func testDecodesAppCoreErrorResponse() async throws {
         URLProtocolStub.requestHandler = { request in
             Self.response(
