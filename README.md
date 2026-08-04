@@ -6,6 +6,7 @@ The package currently supports:
 
 - barcode product lookup and translation;
 - short LEGO set description generation;
+- localized wine and spirits description;
 - plain-text translation;
 - recipe extraction and translation;
 - recipe product extraction;
@@ -116,6 +117,58 @@ let description = try await client.describeBrickSet(
 ```
 
 AppCore owns the OpenAI prompt, model, output limits, and API key. The Swift client sends only the set code, set name, requested language, and its AppCore API key.
+
+## Wine and spirits descriptions
+
+Describe the product returned by a wine barcode lookup:
+
+```swift
+guard let french = LanguageCode("fr") else {
+    fatalError("Invalid language code")
+}
+
+let barcodeProduct = try await client.barcode(
+    "1234567890123",
+    domain: .wine
+)
+
+guard let productName = barcodeProduct.productName else {
+    fatalError("Wine barcode response has no product name")
+}
+
+let wine = try await client.describeWine(
+    named: productName,
+    in: french
+)
+
+if let error = wine.error {
+    print(error)
+} else {
+    print(wine.description ?? "No description")
+    print(wine.type ?? "other")
+}
+```
+
+The response is compatible with the existing `WineProduct` contract, including `pays_d'Oc`, `regulated_designation`, `alcohol_content`, and `sugar_content`. AppCore owns the OpenAI model, prompt, output limit, strict response schema, and allowed beverage types.
+
+### Describe a beverage from an image
+
+Resize and encode the image in the application, then send the JPEG data directly. Do not convert it to a Base64 string in the client:
+
+```swift
+guard let imageData = resizedImage.jpegData(compressionQuality: 1) else {
+    fatalError("Could not encode wine image")
+}
+
+let wine = try await client.describeWine(
+    fromImage: imageData,
+    fileName: "wine.jpg",
+    mediaType: .jpeg,
+    in: french
+)
+```
+
+The request uses authenticated multipart form data and sends the language as a separate field. AppCore validates the image and owns the OpenAI vision request, prompt, model, and structured response schema.
 
 ## Text translation
 

@@ -85,6 +85,41 @@ public final class AppCoreClient: Sendable {
         return response.description
     }
 
+    /// Calls `POST /api/ai/wines/describe`.
+    public func describeWine(
+        named name: String,
+        in language: LanguageCode
+    ) async throws -> WineProduct {
+        try await postJSON(
+            path: ["api", "ai", "wines", "describe"],
+            body: DescribeWineRequest(name: name, language: language)
+        )
+    }
+
+    /// Calls `POST /api/ai/wines/from-image` with multipart form data.
+    public func describeWine(
+        fromImage data: Data,
+        fileName: String,
+        mediaType: WineImageMediaType,
+        in language: LanguageCode
+    ) async throws -> WineProduct {
+        let boundary = "AppCoreBoundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url(path: ["api", "ai", "wines", "from-image"]))
+        request.httpMethod = "POST"
+        request.setValue(
+            "multipart/form-data; boundary=\(boundary)",
+            forHTTPHeaderField: "Content-Type"
+        )
+        request.httpBody = multipartImageBody(
+            data: data,
+            fileName: fileName,
+            mediaType: mediaType.rawValue,
+            fields: ["language": language.rawValue],
+            boundary: boundary
+        )
+        return try await send(request)
+    }
+
     /// Calls `POST /api/ai/texts/translate`.
     public func translate(
         _ text: String,
@@ -176,7 +211,8 @@ public final class AppCoreClient: Sendable {
         request.httpBody = multipartImageBody(
             data: data,
             fileName: fileName,
-            mediaType: mediaType,
+            mediaType: mediaType.rawValue,
+            fields: [:],
             boundary: boundary
         )
         return try await send(request)
@@ -225,13 +261,19 @@ public final class AppCoreClient: Sendable {
     private func multipartImageBody(
         data: Data,
         fileName: String,
-        mediaType: RecipeImageMediaType,
+        mediaType: String,
+        fields: [String: String],
         boundary: String
     ) -> Data {
         var body = Data()
+        for field in fields.sorted(by: { $0.key < $1.key }) {
+            body.append(Data("--\(boundary)\r\n".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(field.key)\"\r\n\r\n".utf8))
+            body.append(Data("\(field.value)\r\n".utf8))
+        }
         body.append(Data("--\(boundary)\r\n".utf8))
         body.append(Data("Content-Disposition: form-data; name=\"image\"; filename=\"\(fileName)\"\r\n".utf8))
-        body.append(Data("Content-Type: \(mediaType.rawValue)\r\n\r\n".utf8))
+        body.append(Data("Content-Type: \(mediaType)\r\n\r\n".utf8))
         body.append(data)
         body.append(Data("\r\n--\(boundary)--\r\n".utf8))
         return body

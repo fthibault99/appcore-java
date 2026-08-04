@@ -90,6 +90,92 @@ final class AppCoreClientTests: XCTestCase {
         )
     }
 
+    func testDescribeWineUsesExpectedBodyAndReturnsSwiftContract() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://appcore.example/api/ai/wines/describe")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [String: Any]
+            )
+            XCTAssertEqual(object["name"] as? String, "Château Margaux 2015")
+            XCTAssertEqual(object["language"] as? String, "fr")
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"name":"Château Margaux 2015","description":"Un grand vin rouge de Bordeaux.","country":"France","region":"Bordeaux","pays_d'Oc":null,"regulated_designation":"Margaux","alcohol_content":null,"sugar_content":null,"color":"Rouge","format":null,"producer":"Château Margaux","type":"redWine"}"#
+            )
+        }
+
+        let wine = try await makeClient().describeWine(
+            named: "Château Margaux 2015",
+            in: LanguageCode("FR")!
+        )
+
+        XCTAssertEqual(wine.name, "Château Margaux 2015")
+        XCTAssertEqual(wine.description, "Un grand vin rouge de Bordeaux.")
+        XCTAssertEqual(wine.regulatedDesignation, "Margaux")
+        XCTAssertEqual(wine.type, "redWine")
+        XCTAssertNil(wine.error)
+    }
+
+    func testDescribeWineDecodesLegacyNotAWineError() async throws {
+        URLProtocolStub.requestHandler = { request in
+            Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"error":"It's not a wine"}"#
+            )
+        }
+
+        let result = try await makeClient().describeWine(
+            named: "Apple juice",
+            in: LanguageCode("en")!
+        )
+
+        XCTAssertEqual(result.error, "It's not a wine")
+        XCTAssertNil(result.type)
+        XCTAssertNil(result.description)
+    }
+
+    func testDescribeWineFromImageBuildsAuthenticatedMultipartRequest() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://appcore.example/api/ai/wines/from-image")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+            let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
+            XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let bodyText = String(decoding: body, as: UTF8.self)
+            XCTAssertTrue(bodyText.contains("name=\"language\"\r\n\r\nfr"))
+            XCTAssertTrue(bodyText.contains("name=\"image\"; filename=\"wine.jpg\""))
+            XCTAssertTrue(bodyText.contains("Content-Type: image/jpeg"))
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"name":"Château Margaux","description":"Un vin rouge.","type":"redWine"}"#
+            )
+        }
+
+        let wine = try await makeClient().describeWine(
+            fromImage: Data([0xFF, 0xD8, 0xFF]),
+            fileName: "wine.jpg",
+            mediaType: .jpeg,
+            in: LanguageCode("FR")!
+        )
+
+        XCTAssertEqual(wine.name, "Château Margaux")
+        XCTAssertEqual(wine.type, "redWine")
+    }
+
     func testTranslateTextUsesExpectedBodyAndReturnsText() async throws {
         URLProtocolStub.requestHandler = { request in
             XCTAssertEqual(request.httpMethod, "POST")
