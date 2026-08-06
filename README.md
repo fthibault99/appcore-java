@@ -170,6 +170,31 @@ let wine = try await client.describeWine(
 
 The request uses authenticated multipart form data and sends the language as a separate field. AppCore validates the image and owns the OpenAI vision request, prompt, model, and structured response schema.
 
+### Describe a product from an image
+
+Resize the image in the application and send its JPEG data directly; the client does not need to build a prompt or convert the image to Base64:
+
+```swift
+guard let imageData = resizedImage.jpegData(compressionQuality: 1) else {
+    fatalError("Could not encode product image")
+}
+
+let product = try await client.describeProduct(
+    fromImage: imageData,
+    fileName: "product.jpg",
+    mediaType: .jpeg,
+    in: french
+)
+
+if let name = product.name, let description = product.description {
+    print("\(name): \(description)")
+} else {
+    print("No single product could be identified")
+}
+```
+
+AppCore returns both fields as `null` when it cannot identify one product with reasonable confidence or when the image contains multiple distinct products.
+
 ## Text translation
 
 Translate plain text into a target language:

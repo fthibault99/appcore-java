@@ -176,6 +176,59 @@ final class AppCoreClientTests: XCTestCase {
         XCTAssertEqual(wine.type, "redWine")
     }
 
+    func testDescribeProductFromImageBuildsAuthenticatedMultipartRequest() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.absoluteString, "https://appcore.example/api/ai/products/from-image")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+            let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
+            XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let bodyText = String(decoding: body, as: UTF8.self)
+            XCTAssertTrue(bodyText.contains("name=\"language\"\r\n\r\nfr"))
+            XCTAssertTrue(bodyText.contains("name=\"image\"; filename=\"product.jpg\""))
+            XCTAssertTrue(bodyText.contains("Content-Type: image/jpeg"))
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"name":"Nintendo Switch 2","description":"Une console de jeux vidéo portable."}"#
+            )
+        }
+
+        let product = try await makeClient().describeProduct(
+            fromImage: Data([0xFF, 0xD8, 0xFF]),
+            fileName: "product.jpg",
+            mediaType: .jpeg,
+            in: LanguageCode("FR")!
+        )
+
+        XCTAssertEqual(product.name, "Nintendo Switch 2")
+        XCTAssertEqual(product.description, "Une console de jeux vidéo portable.")
+    }
+
+    func testDescribeProductDecodesUnidentifiedProduct() async throws {
+        URLProtocolStub.requestHandler = { request in
+            Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"name":null,"description":null}"#
+            )
+        }
+
+        let product = try await makeClient().describeProduct(
+            fromImage: Data([0xFF, 0xD8, 0xFF]),
+            fileName: "unknown.jpg",
+            mediaType: .jpeg,
+            in: LanguageCode("fr")!
+        )
+
+        XCTAssertNil(product.name)
+        XCTAssertNil(product.description)
+    }
+
     func testTranslateTextUsesExpectedBodyAndReturnsText() async throws {
         URLProtocolStub.requestHandler = { request in
             XCTAssertEqual(request.httpMethod, "POST")
@@ -307,6 +360,51 @@ final class AppCoreClientTests: XCTestCase {
         )
 
         XCTAssertEqual(translated.name, "Toast")
+    }
+
+    func testExtractRecipeProductsUsesAuthenticatedEndpointAndReturnsGroupedProducts() async throws {
+        URLProtocolStub.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(
+                request.url?.absoluteString,
+                "https://appcore.example/api/ai/recipes/products/extract"
+            )
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-API-Key"), "ac_test_secret")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [String: Any]
+            )
+            XCTAssertEqual(
+                object["ingredients"] as? [String],
+                ["2 onions, finely chopped", "1 tablespoon olive oil"]
+            )
+
+            return Self.response(
+                for: request,
+                statusCode: 200,
+                body: #"{"ingredients":[{"ingredient":"2 onions, finely chopped","products":["onions"]},{"ingredient":"1 tablespoon olive oil","products":["olive oil"]}]}"#
+            )
+        }
+
+        let results = try await makeClient().extractRecipeProducts(
+            from: ["2 onions, finely chopped", "1 tablespoon olive oil"]
+        )
+
+        XCTAssertEqual(
+            results,
+            [
+                IngredientProducts(
+                    ingredient: "2 onions, finely chopped",
+                    products: ["onions"]
+                ),
+                IngredientProducts(
+                    ingredient: "1 tablespoon olive oil",
+                    products: ["olive oil"]
+                )
+            ]
+        )
     }
 
     func testExtractRecipeFromImageBuildsMultipartImagePart() async throws {

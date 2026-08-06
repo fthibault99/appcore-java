@@ -120,6 +120,30 @@ public final class AppCoreClient: Sendable {
         return try await send(request)
     }
 
+    /// Calls `POST /api/ai/products/from-image` with multipart form data.
+    public func describeProduct(
+        fromImage data: Data,
+        fileName: String,
+        mediaType: ProductImageMediaType,
+        in language: LanguageCode
+    ) async throws -> ProductPicture {
+        let boundary = "AppCoreBoundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url(path: ["api", "ai", "products", "from-image"]))
+        request.httpMethod = "POST"
+        request.setValue(
+            "multipart/form-data; boundary=\(boundary)",
+            forHTTPHeaderField: "Content-Type"
+        )
+        request.httpBody = multipartImageBody(
+            data: data,
+            fileName: fileName,
+            mediaType: mediaType.rawValue,
+            fields: ["language": language.rawValue],
+            boundary: boundary
+        )
+        return try await send(request)
+    }
+
     /// Calls `POST /api/ai/texts/translate`.
     public func translate(
         _ text: String,
